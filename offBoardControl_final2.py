@@ -83,6 +83,7 @@ class OffboardControl:
                 self.pose_sub = rospy.Subscriber('/uav1/mavros/local_position/pose', PoseStamped, callback=self.drone_pose_callback)
                 self.state_sub = rospy.Subscriber('/uav1/mavros/state', State, callback=self.state_callback)
                 self.gazebo_sub = rospy.Subscriber('/gazebo/model_states', ModelStates, self.gazebo_callback)
+                # /probe_area topic is published by detect_probe.py node
                 self.area_sub = rospy.Subscriber('/probe_area', Float64, self.area_callback)
                 self.sonar_sub = rospy.Subscriber('/sonar', Range, self.sonar_callback )
                 self.sonar_1_sub = rospy.Subscriber('/sonar_1', Range, self.sonar_1_callback )
@@ -93,6 +94,7 @@ class OffboardControl:
                 self.sonar_6_sub = rospy.Subscriber('/sonar_6', Range, self.sonar_6_callback )
                 self.sonar_7_sub = rospy.Subscriber('/sonar_7', Range, self.sonar_7_callback )
                 self.sonar_8_sub = rospy.Subscriber('/sonar_8', Range, self.sonar_8_callback )
+                # /probe_pose topic is published by detecct_probe.py node
                 self.cam_sub = rospy.Subscriber('/probe_pose' , Point , self.cam_callback)
                 self.rover_vel_sub= rospy.Subscriber('/uav0/mavros/local_position/velocity_local', TwistStamped, callback= self.rover_vel_callback)
                 self.drone_vel_sub= rospy.Subscriber('/uav1/mavros/local_position/velocity_local', TwistStamped, callback= self.drone_vel_callback)
