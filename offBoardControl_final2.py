@@ -5,7 +5,7 @@
 * File Name : offBoardControl_final2.py
 * Theme     : Docking the probe, deploying the probe, and catching up with the rover
 * Classes   : OffboardControl
-* functions : __init__ , rover_vel_callback , drone_vel_callback , drone_pose_callback , gazebo_callback ,
+* functions : __init__ , rover_vel_callback ,rover_pose_callback, drone_vel_callback , drone_pose_callback , gazebo_callback ,
               sonar_callback , sonar_1_callback , sonar_2_callback , ... sonar_8_callback , area_callback ,
               cam_callback , state_callback , set_mode , set_arm , distance , navigate_path , hover , 
               search , retreat , controller.
@@ -17,7 +17,7 @@ import rospy
 from geometry_msgs.msg import PoseStamped, Point, TwistStamped, Twist
 from mavros_msgs.msg import State, PositionTarget
 from gazebo_msgs.msg import ModelStates
-from sensor_msgs.msg import Range
+from sensor_msgs.msg import Range, NavSatFix
 import numpy as np
 from mavros_msgs.srv import SetMode, CommandBool
 from std_msgs.msg import String, Header, Float64
@@ -73,7 +73,7 @@ class OffboardControl:
                 self.velDiff = [0, 0]               # differential of error
                 self.maxVelocity = [5,5]            # maximum and minimum values of the drone, that can be published
                 self.prev_error = [0,0]             # most recent error in position
-                self.tolerance = [-1, -1]           # calculated tolerance for catch-up-with-rover process after experimentation
+                self.tolerance = [118.444691 , -37.460043]    # tolerance for the gps tracking
                 # pid gains respectively, for the catch-up-with-rover process!
                 self.k= [0.5, 0.000005, 0.4] 
                                 
@@ -82,6 +82,7 @@ class OffboardControl:
                 # defining ros subscribers
                 self.pose_sub = rospy.Subscriber('/uav1/mavros/local_position/pose', PoseStamped, callback=self.drone_pose_callback)
                 self.state_sub = rospy.Subscriber('/uav1/mavros/state', State, callback=self.state_callback)
+                self.gps_sub = rospy.Subscriber('/uav0/mavros/global_position/raw/fix', NavSatFix, self.rover_pose_callback)
                 self.gazebo_sub = rospy.Subscriber('/gazebo/model_states', ModelStates, self.gazebo_callback)
                 # /probe_area topic is published by detect_probe.py node
                 self.area_sub = rospy.Subscriber('/probe_area', Float64, self.area_callback)
@@ -111,6 +112,11 @@ class OffboardControl:
         def rover_vel_callback(self, msg):
                 self.rover_vel[0] = msg.twist.linear.x
                 self.rover_vel[1] = msg.twist.linear.y
+              
+        def rover_pose_callback(self, msg):
+                # converting GPS data to x and y coordinates
+                self.rover_pose[0] = (msg.longitude + self.tolerance[0])*(10**5) - 1
+                self.rover_pose[1] = (msg.latitude + self.tolerance[1])*(10**5)*1.1 - 1
 
         def drone_vel_callback(self, msg):
                 self.drone_vel[0] = msg.twist.linear.x
@@ -127,9 +133,7 @@ class OffboardControl:
                 # subscribing to washer position from gazebo modelstates
                 self.drop_loc[0] = msg.pose[3].position.x
                 self.drop_loc[1] = msg.pose[3].position.y
-                # subscribing to rover location from gazebo modelstates
-                self.rover_pose[0] = msg.pose[4].position.x + self.tolerance[0]
-                self.rover_pose[1] = msg.pose[4].position.y + self.tolerance[1]
+                
                 
 
         def sonar_callback(self, msg):
@@ -147,6 +151,7 @@ class OffboardControl:
 
         def sonar_4_callback(self, msg):
                 self.sonar[3] = msg.range
+            
         def sonar_5_callback(self, msg):
                 self.sonar[4] = msg.range
 
@@ -355,7 +360,7 @@ class OffboardControl:
                         self.vel.linear.z = -2
 
                 # change mode to AUTO.LAND if the following condition is met.
-                if (self.z<0.5) and self.area>0 :
+                if (self.z<0.3) and self.area>0 :
                         self.arm = False
                         self.cmd_mode = 'AUTO.LAND'
                         self.mode = "debug"
@@ -432,6 +437,6 @@ class OffboardControl:
 
 
 if __name__ == "__main__":
-        print('OffboardControl version 3.2.1')
+        print('OffboardControl version 3.3.0')
         OffboardControl()
 
