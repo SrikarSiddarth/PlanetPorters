@@ -115,8 +115,8 @@ class OffboardControl:
               
         def rover_pose_callback(self, msg):
                 # converting GPS data to x and y coordinates
-                self.rover_pose[0] = (msg.longitude + self.tolerance[0])*(10**5) - 1
-                self.rover_pose[1] = (msg.latitude + self.tolerance[1])*(10**5)*1.1 - 1
+                self.rover_pose[0] = (msg.longitude + self.tolerance[0])*(10**5) + np.sin(np.arctan(self.rover_vel[0]/self.rover_vel[1]))-np.cos(np.arctan(self.rover_vel[0]/self.rover_vel[1]))
+                self.rover_pose[1] = (msg.latitude + self.tolerance[1])*(10**5)*1.1 - (np.sin(np.arctan(self.rover_vel[0]/self.rover_vel[1]))+np.cos(np.arctan(self.rover_vel[0]/self.rover_vel[1])))
 
         def drone_vel_callback(self, msg):
                 self.drone_vel[0] = msg.twist.linear.x
